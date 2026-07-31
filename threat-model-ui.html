@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Threatline — Customer Support Chatbot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0A0F1C;
+    --bg-elevated: #111A2C;
+    --bg-panel: #0D1526;
+    --border: #1E2B45;
+    --border-soft: #16213A;
+    --text-primary: #E7ECF6;
+    --text-secondary: #8B96AC;
+    --text-tertiary: #5C687F;
+    --accent: #45C8E0;
+    --accent-dim: rgba(69,200,224,0.12);
+    --critical: #F14A63;
+    --critical-dim: rgba(241,74,99,0.13);
+    --high: #F0A23C;
+    --high-dim: rgba(240,162,60,0.13);
+    --medium: #E4D25C;
+    --medium-dim: rgba(228,210,92,0.12);
+    --low: #4FBE8C;
+    --low-dim: rgba(79,190,140,0.13);
+    --zone-internet: #4A5A7A;
+    --zone-frontend: #45C8E0;
+    --zone-backend: #8C7CF0;
+    --zone-ai: #F0A23C;
+    --radius: 10px;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    color:var(--text-primary);
+    font-family:var(--font-body);
+    font-size:14px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;}
+  ::selection{background:var(--accent-dim);color:var(--accent);}
+
+  /* ===== Layout shell ===== */
+  .shell{
+    display:grid;
+    grid-template-columns:60px 1fr 340px;
+    grid-template-rows:52px 1fr;
+    height:100vh;
+    grid-template-areas:
+      "topbar topbar topbar"
+      "rail main detail";
+  }
+
+  /* ===== Top bar ===== */
+  .topbar{
+    grid-area:topbar;
+    display:flex;
+    align-items:center;
+    gap:20px;
+    padding:0 18px;
+    border-bottom:1px solid var(--border);
+    background:var(--bg-panel);
+  }
+  .brand{
+    display:flex;align-items:center;gap:9px;
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:15px;
+    letter-spacing:0.01em;
+    color:var(--text-primary);
+    padding-right:16px;
+    border-right:1px solid var(--border-soft);
+  }
+  .brand .mark{
+    width:20px;height:20px;
+    position:relative;
+  }
+  .brand .mark svg{width:100%;height:100%;}
+  .search{
+    flex:1;
+    max-width:420px;
+    display:flex;align-items:center;gap:8px;
+    background:var(--bg-elevated);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:7px 11px;
+    color:var(--text-tertiary);
+  }
+  .search input{
+    background:none;border:none;outline:none;color:var(--text-primary);
+    font-family:var(--font-body);font-size:13px;flex:1;
+  }
+  .search .kbd{
+    font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary);
+    border:1px solid var(--border);border-radius:4px;padding:1px 5px;
+  }
+  .topbar-spacer{flex:1;}
+  .env-tag{
+    font-family:var(--font-mono);font-size:11px;color:var(--zone-ai);
+    background:var(--high-dim);border:1px solid rgba(240,162,60,0.3);
+    padding:3px 9px;border-radius:20px;letter-spacing:0.03em;
+  }
+  .avatar{
+    width:30px;height:30px;border-radius:50%;
+    background:linear-gradient(135deg,var(--accent),var(--zone-backend));
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-display);font-weight:600;font-size:12px;color:#0A0F1C;
+  }
+
+  /* ===== Icon rail ===== */
+  .rail{
+    grid-area:rail;
+    background:var(--bg-panel);
+    border-right:1px solid var(--border);
+    display:flex;flex-direction:column;align-items:center;
+    padding:14px 0;gap:4px;
+  }
+  .rail-item{
+    width:38px;height:38px;
+    display:flex;align-items:center;justify-content:center;
+    border-radius:8px;color:var(--text-tertiary);
+    position:relative;
+  }
+  .rail-item svg{width:18px;height:18px;}
+  .rail-item.active{
+    background:var(--accent-dim);
+    color:var(--accent);
+  }
+  .rail-item.active::before{
+    content:"";position:absolute;left:-14px;top:50%;transform:translateY(-50%);
+    width:3px;height:18px;background:var(--accent);border-radius:0 3px 3px 0;
+  }
+  .rail-item:not(.active):hover{background:var(--bg-elevated);color:var(--text-secondary);}
+  .rail-divider{width:24px;height:1px;background:var(--border-soft);margin:8px 0;}
+  .rail-new{
+    width:38px;height:38px;border-radius:8px;
+    background:var(--accent);color:#06141C;
+    display:flex;align-items:center;justify-content:center;
+    border:none;margin-top:6px;
+  }
+  .rail-new svg{width:16px;height:16px;}
+
+  /* ===== Main workspace ===== */
+  .main{
+    grid-area:main;
+    overflow-y:auto;
+    padding:22px 28px 60px;
+  }
+
+  .model-header{
+    display:flex;align-items:flex-start;justify-content:space-between;
+    margin-bottom:18px;
+    gap:20px;
+  }
+  .model-title-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .model-title{
+    font-family:var(--font-display);font-weight:600;font-size:22px;
+    color:var(--text-primary);
+  }
+  .status-pill{
+    font-family:var(--font-mono);font-size:10.5px;letter-spacing:0.04em;
+    text-transform:uppercase;color:var(--text-tertiary);
+    border:1px solid var(--border);border-radius:20px;padding:3px 10px;
+  }
+  .model-sub{
+    color:var(--text-secondary);font-size:13px;margin-top:5px;max-width:640px;
+  }
+  .header-actions{display:flex;gap:8px;flex-shrink:0;}
+  .btn{
+    display:flex;align-items:center;gap:6px;
+    padding:8px 13px;border-radius:8px;font-size:13px;font-weight:500;
+    border:1px solid var(--border);background:var(--bg-elevated);color:var(--text-secondary);
+  }
+  .btn:hover{border-color:var(--text-tertiary);color:var(--text-primary);}
+  .btn svg{width:14px;height:14px;}
+  .btn-primary{
+    background:var(--accent);color:#06141C;border-color:var(--accent);font-weight:600;
+  }
+  .btn-primary:hover{opacity:0.9;color:#06141C;}
+
+  /* ===== Summary cards ===== */
+  .summary-row{
+    display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:22px;
+  }
+  .card{
+    background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:14px 16px;
+  }
+  .card .card-label{
+    font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.05em;
+    margin-bottom:8px;
+  }
+  .card .card-value{
+    font-family:var(--font-display);font-weight:600;font-size:24px;
+  }
+  .card.critical .card-value{color:var(--critical);}
+  .card.high .card-value{color:var(--high);}
+  .card .card-value small{font-size:13px;color:var(--text-tertiary);font-weight:500;font-family:var(--font-body);}
+
+  /* ===== Tabs ===== */
+  .tabs{
+    display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:20px;
+  }
+  .tab{
+    padding:10px 4px;margin-right:22px;font-size:13.5px;font-weight:500;color:var(--text-tertiary);
+    border-bottom:2px solid transparent;position:relative;top:1px;
+  }
+  .tab.active{color:var(--text-primary);border-bottom-color:var(--accent);}
+  .tab .count{
+    font-family:var(--font-mono);font-size:10.5px;color:var(--text-tertiary);
+    background:var(--bg-elevated);border-radius:10px;padding:1px 6px;margin-left:6px;
+  }
+  .tab.active .count{color:var(--accent);}
+
+  /* ===== Section blocks ===== */
+  .section-title{
+    font-family:var(--font-display);font-size:13px;font-weight:600;
+    text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary);
+    margin-bottom:12px;display:flex;align-items:center;gap:8px;
+  }
+  .section-title .n{color:var(--accent);font-family:var(--font-mono);}
+  .block{margin-bottom:30px;}
+
+  .overview-text{
+    color:var(--text-secondary);font-size:13.5px;line-height:1.7;max-width:760px;
+    background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px 18px;
+  }
+
+  .chip-grid{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{
+    display:flex;align-items:center;gap:7px;
+    background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;
+    padding:7px 12px;font-size:12.5px;color:var(--text-secondary);
+  }
+  .chip .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+  .chip.pii .dot{background:var(--critical);}
+  .chip.secret .dot{background:var(--high);}
+  .chip.data .dot{background:var(--accent);}
+  .chip.actor .dot{background:var(--zone-backend);}
+
+  /* ===== Threat filter bar ===== */
+  .filter-bar{display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap;}
+  .filter-select{
+    font-size:12.5px;color:var(--text-secondary);background:var(--bg-elevated);
+    border:1px solid var(--border);border-radius:7px;padding:6px 10px;
+    display:flex;align-items:center;gap:6px;
+  }
+  .filter-select svg{width:11px;height:11px;opacity:0.6;}
+  .filter-spacer{flex:1;}
+  .result-count{font-size:12px;color:var(--text-tertiary);font-family:var(--font-mono);}
+
+  /* ===== Threat cards ===== */
+  .threat-list{display:flex;flex-direction:column;gap:10px;}
+  .threat-card{
+    background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:15px 17px;cursor:pointer;transition:border-color .15s;
+  }
+  .threat-card:hover{border-color:var(--text-tertiary);}
+  .threat-card.selected{border-color:var(--accent);background:linear-gradient(180deg,rgba(69,200,224,0.05),transparent 40%),var(--bg-panel);}
+  .threat-top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:8px;}
+  .threat-name{font-family:var(--font-display);font-weight:600;font-size:14.5px;}
+  .threat-meta{display:flex;gap:6px;flex-shrink:0;}
+  .sev-badge{
+    font-family:var(--font-mono);font-size:10px;letter-spacing:0.04em;text-transform:uppercase;
+    padding:3px 9px;border-radius:20px;font-weight:600;
+  }
+  .sev-badge.critical{background:var(--critical-dim);color:var(--critical);}
+  .sev-badge.high{background:var(--high-dim);color:var(--high);}
+  .sev-badge.medium{background:var(--medium-dim);color:var(--medium);}
+  .sev-badge.low{background:var(--low-dim);color:var(--low);}
+  .threat-desc{color:var(--text-secondary);font-size:13px;margin-bottom:11px;max-width:680px;}
+  .fw-row{display:flex;flex-wrap:wrap;gap:6px;}
+  .fw-chip{
+    font-family:var(--font-mono);font-size:10.5px;color:var(--text-tertiary);
+    border:1px solid var(--border-soft);border-radius:5px;padding:3px 7px;
+    background:var(--bg-elevated);
+  }
+  .fw-chip b{color:var(--text-secondary);font-weight:600;}
+
+  /* ===== Data flow diagram ===== */
+  .diagram-wrap{
+    background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:22px;overflow-x:auto;
+  }
+  .zone-legend{display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;}
+  .zone-legend .lg{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-tertiary);}
+  .zone-legend .sw{width:9px;height:9px;border-radius:2px;}
+
+  /* ===== Compliance tab ===== */
+  .compliance-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  .compliance-card{
+    background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px;
+  }
+  .compliance-card .fw-name{
+    font-family:var(--font-mono);font-size:11px;color:var(--accent);letter-spacing:0.03em;margin-bottom:8px;
+  }
+  .compliance-card h4{font-family:var(--font-display);font-size:14px;font-weight:600;margin-bottom:8px;}
+  .compliance-card p{font-size:12.5px;color:var(--text-secondary);line-height:1.6;}
+  .compliance-card .ref{
+    margin-top:10px;font-family:var(--font-mono);font-size:10.5px;color:var(--text-tertiary);
+    border-top:1px solid var(--border-soft);padding-top:9px;
+  }
+
+  /* ===== Right detail panel ===== */
+  .detail{
+    grid-area:detail;
+    background:var(--bg-panel);border-left:1px solid var(--border);
+    overflow-y:auto;padding:20px;
+  }
+  .detail-eyebrow{
+    font-family:var(--font-mono);font-size:10.5px;color:var(--text-tertiary);
+    text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;
+  }
+  .detail-title{font-family:var(--font-display);font-weight:600;font-size:17px;margin-bottom:12px;}
+  .detail-stat-row{display:flex;gap:8px;margin-bottom:18px;}
+  .detail-stat{
+    flex:1;background:var(--bg-elevated);border:1px solid var(--border-soft);border-radius:8px;
+    padding:9px 10px;
+  }
+  .detail-stat .lbl{font-size:10px;color:var(--text-tertiary);text-transform:uppercase;margin-bottom:3px;}
+  .detail-stat .val{font-weight:600;font-size:13px;}
+  .detail-section{margin-bottom:20px;}
+  .detail-section h5{
+    font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-tertiary);
+    margin-bottom:9px;font-weight:600;
+  }
+  .detail-section p{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+  .fw-detail-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:8px 0;border-bottom:1px solid var(--border-soft);font-size:12px;
+  }
+  .fw-detail-row:last-child{border-bottom:none;}
+  .fw-detail-row .fw-src{color:var(--text-tertiary);}
+  .fw-detail-row .fw-id{font-family:var(--font-mono);color:var(--accent);}
+  .mitigation-list{list-style:none;}
+  .mitigation-list li{
+    font-size:12.5px;color:var(--text-secondary);padding:7px 0 7px 18px;position:relative;
+    border-bottom:1px solid var(--border-soft);
+  }
+  .mitigation-list li:last-child{border-bottom:none;}
+  .mitigation-list li::before{
+    content:"";position:absolute;left:0;top:13px;width:7px;height:7px;border-radius:2px;
+    background:var(--low);
+  }
+  .detail-footer-btn{
+    width:100%;padding:10px;border-radius:8px;background:var(--bg-elevated);
+    border:1px solid var(--border);color:var(--text-secondary);font-size:12.5px;font-weight:500;
+    margin-top:6px;
+  }
+  .detail-footer-btn:hover{color:var(--text-primary);border-color:var(--text-tertiary);}
+
+  .hidden{display:none !important;}
+
+  @media (max-width:1180px){
+    .shell{grid-template-columns:60px 1fr;grid-template-areas:"topbar topbar" "rail main";}
+    .detail{display:none;}
+    .compliance-grid{grid-template-columns:1fr 1fr;}
+    .summary-row{grid-template-columns:repeat(3,1fr);}
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="brand">
+      <span class="mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L3 6v6c0 5.2 3.6 9.4 9 10 5.4-.6 9-4.8 9-10V6l-9-4z" stroke="#45C8E0" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 12l2 2 4-4.5" stroke="#45C8E0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      Threatline
+    </div>
+    <div class="search">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" placeholder="Search threats, assets, ATT&CK IDs…">
+      <span class="kbd">⌘K</span>
+    </div>
+    <div class="topbar-spacer"></div>
+    <span class="env-tag">DRAFT · UNREVIEWED</span>
+    <div class="avatar">JD</div>
+  </div>
+
+  <!-- ICON RAIL -->
+  <div class="rail">
+    <button class="rail-new" title="New threat model">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <div class="rail-divider"></div>
+    <div class="rail-item" title="Dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    </div>
+    <div class="rail-item active" title="Threat models">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l9 4.5v9L12 22l-9-6.5v-9L12 2z"/><path d="M12 12l9-5.5M12 12v10M12 12L3 6.5"/></svg>
+    </div>
+    <div class="rail-item" title="Reports">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3h8l4 4v14a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M9 12h6M9 16h6M9 8h3"/></svg>
+    </div>
+    <div class="rail-item" title="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1 1.55V21a2 2 0 01-4 0v-.09a1.7 1.7 0 00-1-1.56 1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.7 1.7 0 00.34-1.87 1.7 1.7 0 00-1.55-1H3a2 2 0 010-4h.09a1.7 1.7 0 001.56-1 1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06a1.7 1.7 0 001.87.34H9a1.7 1.7 0 001-1.55V3a2 2 0 014 0v.09a1.7 1.7 0 001 1.55 1.7 1.7 0 001.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06a1.7 1.7 0 00-.34 1.87V9a1.7 1.7 0 001.55 1H21a2 2 0 010 4h-.09a1.7 1.7 0 00-1.55 1z"/></svg>
+    </div>
+  </div>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="main">
+
+    <div class="model-header">
+      <div>
+        <div class="model-title-row">
+          <div class="model-title">Customer Support Chatbot</div>
+          <span class="status-pill">v1 · draft</span>
+        </div>
+        <div class="model-sub">"Customer support chatbot using Azure OpenAI, Microsoft Graph API, Redis cache, PostgreSQL database and React frontend." — generated 2 min ago</div>
+      </div>
+      <div class="header-actions">
+        <button class="btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Export
+        </button>
+        <button class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+          Save
+        </button>
+      </div>
+    </div>
+
+    <div class="summary-row">
+      <div class="card"><div class="card-label">Assets</div><div class="card-value">6</div></div>
+      <div class="card"><div class="card-label">Threats</div><div class="card-value">4</div></div>
+      <div class="card critical"><div class="card-label">Critical</div><div class="card-value">1</div></div>
+      <div class="card high"><div class="card-label">High</div><div class="card-value">2</div></div>
+      <div class="card"><div class="card-label">Framework coverage</div><div class="card-value">100<small>%</small></div></div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab" data-tab="overview">Overview</div>
+      <div class="tab active" data-tab="threats">Threats <span class="count">4</span></div>
+      <div class="tab" data-tab="dataflow">Data Flow</div>
+      <div class="tab" data-tab="compliance">Compliance</div>
+    </div>
+
+    <!-- OVERVIEW TAB -->
+    <div class="tab-panel hidden" id="panel-overview">
+      <div class="block">
+        <div class="section-title"><span class="n">01</span> System overview</div>
+        <div class="overview-text">A React single-page frontend collects customer support conversations and calls a backend API that orchestrates Azure OpenAI for response generation, Microsoft Graph for account and ticket lookups, Redis for session caching, and PostgreSQL for persistent conversation and ticket storage. Authentication flows through Azure AD via Microsoft Graph OAuth.</div>
+      </div>
+      <div class="block">
+        <div class="section-title"><span class="n">02</span> Assets</div>
+        <div class="chip-grid">
+          <div class="chip pii"><span class="dot"></span>Customer PII</div>
+          <div class="chip pii"><span class="dot"></span>Conversation history</div>
+          <div class="chip secret"><span class="dot"></span>Azure OpenAI API keys</div>
+          <div class="chip secret"><span class="dot"></span>Microsoft Graph OAuth tokens</div>
+          <div class="chip data"><span class="dot"></span>Session cache entries</div>
+          <div class="chip data"><span class="dot"></span>Support ticket records</div>
+        </div>
+      </div>
+      <div class="block">
+        <div class="section-title"><span class="n">03</span> Threat actors</div>
+        <div class="chip-grid">
+          <div class="chip actor"><span class="dot"></span>External attacker</div>
+          <div class="chip actor"><span class="dot"></span>Malicious insider</div>
+          <div class="chip actor"><span class="dot"></span>Compromised third-party plugin</div>
+          <div class="chip actor"><span class="dot"></span>Script kiddie</div>
+        </div>
+      </div>
+      <div class="block">
+        <div class="section-title"><span class="n">04</span> Trust boundaries</div>
+        <div class="chip-grid">
+          <div class="chip"><span class="dot" style="background:var(--zone-internet)"></span>Internet</div>
+          <div class="chip"><span class="dot" style="background:var(--zone-frontend)"></span>React frontend</div>
+          <div class="chip"><span class="dot" style="background:var(--zone-backend)"></span>API backend</div>
+          <div class="chip"><span class="dot" style="background:var(--zone-ai)"></span>Azure OpenAI</div>
+          <div class="chip"><span class="dot" style="background:var(--zone-backend)"></span>Microsoft Graph</div>
+          <div class="chip"><span class="dot" style="background:var(--zone-backend)"></span>Redis / PostgreSQL</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- THREATS TAB -->
+    <div class="tab-panel" id="panel-threats">
+      <div class="filter-bar">
+        <div class="filter-select">Severity: All <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+        <div class="filter-select">Framework: All <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+        <div class="filter-select">Asset: All <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+        <div class="filter-spacer"></div>
+        <div class="result-count">4 of 4 threats</div>
+      </div>
+
+      <div class="threat-list">
+
+        <div class="threat-card selected" data-threat="prompt-injection">
+          <div class="threat-top">
+            <div class="threat-name">Prompt Injection via Customer Input</div>
+            <div class="threat-meta"><span class="sev-badge critical">Critical</span></div>
+          </div>
+          <div class="threat-desc">An attacker embeds adversarial instructions in a chat message to override system prompts, exfiltrate context, or trigger unintended tool calls against Microsoft Graph.</div>
+          <div class="fw-row">
+            <span class="fw-chip"><b>ATT&CK</b> T1059</span>
+            <span class="fw-chip"><b>ATLAS</b> AML.T0051</span>
+            <span class="fw-chip"><b>OWASP LLM</b> LLM01:2025</span>
+            <span class="fw-chip"><b>NIST 800-53</b> SI-10</span>
+          </div>
+        </div>
+
+        <div class="threat-card" data-threat="excessive-agency">
+          <div class="threat-top">
+            <div class="threat-name">Excessive Agency via Graph API Scopes</div>
+            <div class="threat-meta"><span class="sev-badge high">High</span></div>
+          </div>
+          <div class="threat-desc">Overly broad OAuth scopes let the model-driven agent perform write actions (ticket updates, mailbox access) beyond what a support flow requires.</div>
+          <div class="fw-row">
+            <span class="fw-chip"><b>OWASP LLM</b> LLM06:2025</span>
+            <span class="fw-chip"><b>NIST 800-53</b> AC-6</span>
+          </div>
+        </div>
+
+        <div class="threat-card" data-threat="session-leakage">
+          <div class="threat-top">
+            <div class="threat-name">Session Token Leakage via Redis</div>
+            <div class="threat-meta"><span class="sev-badge high">High</span></div>
+          </div>
+          <div class="threat-desc">Session tokens cached in Redis without encryption or TTL enforcement can be harvested if the cache layer is exposed or compromised.</div>
+          <div class="fw-row">
+            <span class="fw-chip"><b>ATT&CK</b> T1552</span>
+            <span class="fw-chip"><b>OWASP API</b> API2:2023</span>
+          </div>
+        </div>
+
+        <div class="threat-card" data-threat="output-handling">
+          <div class="threat-top">
+            <div class="threat-name">Insecure Output Handling → Stored XSS</div>
+            <div class="threat-meta"><span class="sev-badge medium">Medium</span></div>
+          </div>
+          <div class="threat-desc">Unsanitized model output rendered directly in the React frontend allows injected markup or scripts to execute in a support agent's browser session.</div>
+          <div class="fw-row">
+            <span class="fw-chip"><b>OWASP Web</b> A03:2021</span>
+            <span class="fw-chip"><b>CWE</b> CWE-79</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- DATA FLOW TAB -->
+    <div class="tab-panel hidden" id="panel-dataflow">
+      <div class="section-title"><span class="n">◆</span> Trust boundary diagram</div>
+      <div class="diagram-wrap">
+        <div class="zone-legend">
+          <div class="lg"><span class="sw" style="background:var(--zone-internet)"></span>Internet</div>
+          <div class="lg"><span class="sw" style="background:var(--zone-frontend)"></span>Frontend zone</div>
+          <div class="lg"><span class="sw" style="background:var(--zone-backend)"></span>Backend zone</div>
+          <div class="lg"><span class="sw" style="background:var(--zone-ai)"></span>AI provider zone</div>
+        </div>
+        <svg viewBox="0 0 980 300" style="width:100%;min-width:820px;">
+          <!-- zone containers -->
+          <rect x="10" y="20" width="130" height="250" rx="8" fill="none" stroke="#4A5A7A" stroke-width="1.3" stroke-dasharray="5 4"/>
+          <text x="30" y="42" fill="#8B96AC" font-family="IBM Plex Mono" font-size="10">INTERNET</text>
+
+          <rect x="170" y="20" width="150" height="250" rx="8" fill="none" stroke="#45C8E0" stroke-width="1.3" stroke-dasharray="5 4"/>
+          <text x="190" y="42" fill="#45C8E0" font-family="IBM Plex Mono" font-size="10">FRONTEND ZONE</text>
+
+          <rect x="350" y="20" width="330" height="250" rx="8" fill="none" stroke="#8C7CF0" stroke-width="1.3" stroke-dasharray="5 4"/>
+          <text x="370" y="42" fill="#8C7CF0" font-family="IBM Plex Mono" font-size="10">BACKEND ZONE</text>
+
+          <rect x="710" y="20" width="255" height="250" rx="8" fill="none" stroke="#F0A23C" stroke-width="1.3" stroke-dasharray="5 4"/>
+          <text x="730" y="42" fill="#F0A23C" font-family="IBM Plex Mono" font-size="10">AI / GRAPH PROVIDER ZONE</text>
+
+          <!-- nodes -->
+          <g font-family="Inter" font-size="12" fill="#E7ECF6">
+            <rect x="40" y="120" width="70" height="44" rx="7" fill="#111A2C" stroke="#1E2B45"/>
+            <text x="75" y="146" text-anchor="middle">User</text>
+
+            <rect x="200" y="120" width="90" height="44" rx="7" fill="#111A2C" stroke="#45C8E0"/>
+            <text x="245" y="146" text-anchor="middle">React UI</text>
+
+            <rect x="390" y="60" width="100" height="44" rx="7" fill="#111A2C" stroke="#8C7CF0"/>
+            <text x="440" y="86" text-anchor="middle">API Backend</text>
+
+            <rect x="390" y="200" width="100" height="44" rx="7" fill="#111A2C" stroke="#8C7CF0"/>
+            <text x="440" y="226" text-anchor="middle">Redis</text>
+
+            <rect x="540" y="200" width="110" height="44" rx="7" fill="#111A2C" stroke="#8C7CF0"/>
+            <text x="595" y="226" text-anchor="middle">PostgreSQL</text>
+
+            <rect x="750" y="60" width="110" height="44" rx="7" fill="#111A2C" stroke="#F0A23C"/>
+            <text x="805" y="86" text-anchor="middle">Azure OpenAI</text>
+
+            <rect x="750" y="200" width="130" height="44" rx="7" fill="#111A2C" stroke="#F0A23C"/>
+            <text x="815" y="226" text-anchor="middle">Microsoft Graph</text>
+          </g>
+
+          <!-- arrows -->
+          <g stroke="#3A4763" stroke-width="1.4" fill="none" marker-end="url(#arrow)">
+            <path d="M110 142 L198 142"/>
+            <path d="M290 135 L388 100"/>
+            <path d="M440 104 L440 198"/>
+            <path d="M490 222 L538 222"/>
+            <path d="M490 82 L748 82"/>
+            <path d="M490 100 L748 210"/>
+          </g>
+          <defs>
+            <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#3A4763"/>
+            </marker>
+          </defs>
+        </svg>
+      </div>
+    </div>
+
+    <!-- COMPLIANCE TAB -->
+    <div class="tab-panel hidden" id="panel-compliance">
+      <div class="section-title"><span class="n">§</span> Applicable governance frameworks</div>
+      <div class="compliance-grid">
+        <div class="compliance-card">
+          <div class="fw-name">NIST AI RMF 1.0</div>
+          <h4>Govern &amp; Manage functions apply</h4>
+          <p>The system uses a foundation model to take actions against live customer and account data — establish AI risk ownership and a documented incident response path before launch.</p>
+          <div class="ref">Functions: GOVERN 1.1, MANAGE 2.3</div>
+        </div>
+        <div class="compliance-card">
+          <div class="fw-name">ISO/IEC 42001:2023</div>
+          <h4>AI risk assessment required</h4>
+          <p>As an AI management system control, the chatbot's risk treatment plan should be recorded and reviewed on a fixed cadence, tied to the assets and threats identified in this model.</p>
+          <div class="ref">Ref: Annex A.6.2.2</div>
+        </div>
+        <div class="compliance-card">
+          <div class="fw-name">EU AI Act</div>
+          <h4>Limited-risk transparency obligation</h4>
+          <p>A customer-facing conversational agent triggers a disclosure duty — users must be told they are interacting with an AI system, not a human agent.</p>
+          <div class="ref">Ref: Article 50</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT DETAIL PANEL -->
+  <div class="detail">
+    <div class="detail-eyebrow">Threat detail</div>
+    <div class="detail-title">Prompt Injection via Customer Input</div>
+
+    <div class="detail-stat-row">
+      <div class="detail-stat"><div class="lbl">Likelihood</div><div class="val" style="color:var(--critical)">High</div></div>
+      <div class="detail-stat"><div class="lbl">Impact</div><div class="val" style="color:var(--critical)">Critical</div></div>
+      <div class="detail-stat"><div class="lbl">Risk</div><div class="val" style="color:var(--critical)">Critical</div></div>
+    </div>
+
+    <div class="detail-section">
+      <h5>Attack path</h5>
+      <p>User submits a crafted chat message → React UI forwards raw text to API backend → backend passes message into the model context with insufficient isolation → model executes injected instruction, potentially invoking a Graph API tool call or leaking prior context.</p>
+    </div>
+
+    <div class="detail-section">
+      <h5>Framework mapping</h5>
+      <div class="fw-detail-row"><span class="fw-src">MITRE ATT&CK</span><span class="fw-id">T1059</span></div>
+      <div class="fw-detail-row"><span class="fw-src">MITRE ATLAS</span><span class="fw-id">AML.T0051</span></div>
+      <div class="fw-detail-row"><span class="fw-src">OWASP LLM Top 10</span><span class="fw-id">LLM01:2025</span></div>
+      <div class="fw-detail-row"><span class="fw-src">NIST 800-53</span><span class="fw-id">SI-10</span></div>
+      <div class="fw-detail-row"><span class="fw-src">CAPEC</span><span class="fw-id">CAPEC-242</span></div>
+    </div>
+
+    <div class="detail-section">
+      <h5>Mitigations</h5>
+      <ul class="mitigation-list">
+        <li>Isolate system instructions from user input with structured prompting</li>
+        <li>Filter and validate model output before any tool invocation</li>
+        <li>Require human approval for write-scope Graph API actions</li>
+        <li>Rate-limit and log anomalous prompt patterns per session</li>
+      </ul>
+    </div>
+
+    <button class="detail-footer-btn">View source citations</button>
+    <button class="detail-footer-btn">Mark as reviewed</button>
+  </div>
+
+</div>
+
+<script>
+  // Tab switching
+  document.querySelectorAll('.tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p=>p.classList.add('hidden'));
+      tab.classList.add('active');
+      document.getElementById('panel-'+tab.dataset.tab).classList.remove('hidden');
+    });
+  });
+
+  // Threat card -> detail panel
+  const threatData = {
+    'prompt-injection': {
+      title:'Prompt Injection via Customer Input',
+      lik:'High', imp:'Critical', risk:'Critical', riskColor:'var(--critical)',
+      path:'User submits a crafted chat message → React UI forwards raw text to API backend → backend passes message into the model context with insufficient isolation → model executes injected instruction, potentially invoking a Graph API tool call or leaking prior context.',
+      fw:[['MITRE ATT&CK','T1059'],['MITRE ATLAS','AML.T0051'],['OWASP LLM Top 10','LLM01:2025'],['NIST 800-53','SI-10'],['CAPEC','CAPEC-242']],
+      mit:['Isolate system instructions from user input with structured prompting','Filter and validate model output before any tool invocation','Require human approval for write-scope Graph API actions','Rate-limit and log anomalous prompt patterns per session']
+    },
+    'excessive-agency': {
+      title:'Excessive Agency via Graph API Scopes',
+      lik:'Medium', imp:'High', risk:'High', riskColor:'var(--high)',
+      path:'Support agent grants broad Graph API consent at setup → backend token carries write scopes not required for read-only lookups → a manipulated model response triggers an unintended mailbox or ticket write action.',
+      fw:[['OWASP LLM Top 10','LLM06:2025'],['NIST 800-53','AC-6'],['MITRE ATT&CK','T1078']],
+      mit:['Scope OAuth tokens to least privilege (read-only where possible)','Require human approval for any write action','Separate read and write credentials by workflow']
+    },
+    'session-leakage': {
+      title:'Session Token Leakage via Redis',
+      lik:'Medium', imp:'High', risk:'High', riskColor:'var(--high)',
+      path:'Session tokens are cached in Redis without encryption → cache instance is exposed via misconfigured network rules or an internal actor gains access → tokens are extracted and replayed to impersonate active sessions.',
+      fw:[['MITRE ATT&CK','T1552'],['OWASP API Top 10','API2:2023'],['NIST 800-53','SC-28']],
+      mit:['Encrypt cache entries at rest','Enforce short TTLs and token rotation','Restrict Redis network access to backend service only']
+    },
+    'output-handling': {
+      title:'Insecure Output Handling → Stored XSS',
+      lik:'Medium', imp:'Medium', risk:'Medium', riskColor:'var(--medium)',
+      path:"Model generates a response containing unsanitized markup → React frontend renders it directly into the DOM → injected script executes in a support agent's authenticated browser session.",
+      fw:[['OWASP Web Top 10','A03:2021'],['CWE','CWE-79']],
+      mit:['Encode all model output before rendering','Apply a strict Content-Security-Policy','Treat model output as untrusted input, never raw HTML']
+    }
+  };
+
+  document.querySelectorAll('.threat-card').forEach(card=>{
+    card.addEventListener('click', ()=>{
+      document.querySelectorAll('.threat-card').forEach(c=>c.classList.remove('selected'));
+      card.classList.add('selected');
+      const d = threatData[card.dataset.threat];
+      if(!d) return;
+      document.querySelector('.detail-title').textContent = d.title;
+      const stats = document.querySelectorAll('.detail-stat .val');
+      stats[0].textContent = d.lik; stats[0].style.color = d.riskColor;
+      stats[1].textContent = d.imp; stats[1].style.color = d.riskColor;
+      stats[2].textContent = d.risk; stats[2].style.color = d.riskColor;
+      document.querySelectorAll('.detail-section')[0].querySelector('p').textContent = d.path;
+      const fwContainer = document.querySelectorAll('.detail-section')[1];
+      fwContainer.querySelectorAll('.fw-detail-row').forEach(r=>r.remove());
+      d.fw.forEach(([src,id])=>{
+        const row = document.createElement('div');
+        row.className='fw-detail-row';
+        row.innerHTML = `<span class="fw-src">${src}</span><span class="fw-id">${id}</span>`;
+        fwContainer.appendChild(row);
+      });
+      const mitList = document.querySelector('.mitigation-list');
+      mitList.innerHTML = d.mit.map(m=>`<li>${m}</li>`).join('');
+    });
+  });
+</script>
+
+</body>
+</html>
