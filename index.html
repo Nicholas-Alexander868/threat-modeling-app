@@ -413,6 +413,13 @@
 
   <!-- MAIN WORKSPACE -->
   <div class="main">
+      <div class="generate-box" style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:20px;">
+      <div class="section-title"><span class="n">▶</span> Generate a threat model</div>
+      <textarea id="systemDescription" placeholder="Describe your system, e.g. Customer support chatbot using Azure OpenAI, Microsoft Graph API, Redis cache, PostgreSQL database and React frontend." style="width:100%;min-height:80px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);padding:10px;font-family:var(--font-body);font-size:13px;"></textarea>
+      <button id="generateBtn" class="btn btn-primary" style="margin-top:10px;">Generate Threat Model</button>
+      <div id="generateStatus" style="margin-top:10px;font-size:12.5px;color:var(--text-secondary);"></div>
+      <pre id="generateResult" style="margin-top:10px;white-space:pre-wrap;font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);max-height:400px;overflow-y:auto;"></pre>
+    </div>  
 
     <div class="model-header">
       <div>
@@ -755,6 +762,41 @@
     });
   });
 </script>
+<script>
+  document.getElementById('generateBtn').addEventListener('click', async () => {
+    const description = document.getElementById('systemDescription').value;
+    const status = document.getElementById('generateStatus');
+    const result = document.getElementById('generateResult');
 
+    if (!description.trim()) {
+      status.textContent = 'Please enter a system description first.';
+      return;
+    }
+
+    status.textContent = 'Generating threat model, please wait...';
+    result.textContent = '';
+
+    try {
+      const response = await fetch('/api/generate-threats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        status.textContent = 'Error: ' + (data.error || 'Something went wrong.');
+        return;
+      }
+
+      status.textContent = 'Done.';
+      result.textContent = JSON.stringify(data, null, 2);
+    } catch (err) {
+      status.textContent = 'Error: could not reach the server.';
+      console.error(err);
+    }
+  });
+</script>
 </body>
 </html>
