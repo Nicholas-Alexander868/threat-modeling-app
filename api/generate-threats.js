@@ -48,7 +48,13 @@ System description: ${description}`,
       ],
     });
 
-    const responseText = message.content[0].text;
+    let responseText = message.content[0].text;
+
+    responseText = responseText.trim();
+    if (responseText.startsWith('```')) {
+      responseText = responseText.replace(/^```(json)?/, '').replace(/```$/, '').trim();
+    }
+
     const threatModel = JSON.parse(responseText);
 
     res.status(200).json(threatModel);
