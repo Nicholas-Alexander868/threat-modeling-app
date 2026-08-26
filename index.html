@@ -762,7 +762,39 @@
     });
   });
 </script>
-<script>
+<script>function renderThreatModel(data) {
+  const critical = data.threats.filter(t => t.severity === 'Critical').length;
+  const high = data.threats.filter(t => t.severity === 'High').length;
+
+  let html = `
+    <div class="summary-row">
+      <div class="card"><div class="card-label">Assets</div><div class="card-value">${data.assets.length}</div></div>
+      <div class="card"><div class="card-label">Threats</div><div class="card-value">${data.threats.length}</div></div>
+      <div class="card critical"><div class="card-label">Critical</div><div class="card-value">${critical}</div></div>
+      <div class="card high"><div class="card-label">High</div><div class="card-value">${high}</div></div>
+    </div>
+    <p style="margin-top:16px;color:var(--text-secondary);">${data.systemOverview}</p>
+  `;
+
+  data.threats.forEach(threat => {
+    html += `
+      <div style="border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:12px;background:var(--bg-panel);">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <strong style="font-size:16px;">${threat.name}</strong>
+          <span style="padding:2px 10px;border-radius:12px;font-size:12px;background:rgba(255,255,255,0.1);">${threat.severity}</span>
+        </div>
+        <p style="color:var(--text-secondary);margin-top:8px;">${threat.description}</p>
+        <p style="margin-top:8px;"><em>Likelihood:</em> ${threat.likelihood} &nbsp; <em>Impact:</em> ${threat.impact}</p>
+        <details style="margin-top:8px;">
+          <summary style="cursor:pointer;color:var(--accent);">Mitigations (${threat.mitigations.length})</summary>
+          <ul>${threat.mitigations.map(m => `<li>${m}</li>`).join('')}</ul>
+        </details>
+      </div>
+    `;
+  });
+
+  return html;
+}
   document.getElementById('generateBtn').addEventListener('click', async () => {
     const description = document.getElementById('systemDescription').value;
     const status = document.getElementById('generateStatus');
@@ -791,7 +823,7 @@
       }
 
       status.textContent = 'Done.';
-      result.textContent = JSON.stringify(data, null, 2);
+      result.innerHTML = renderThreatModel(data);
     } catch (err) {
       status.textContent = 'Error: could not reach the server.';
       console.error(err);
