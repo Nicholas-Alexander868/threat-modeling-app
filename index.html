@@ -420,7 +420,7 @@
       <div id="generateStatus" style="margin-top:10px;font-size:12.5px;color:var(--text-secondary);"></div>
       <pre id="generateResult" style="margin-top:10px;white-space:pre-wrap;font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);max-height:400px;overflow-y:auto;"></pre>
     </div>  
-
+<button id="saveBtn" class="btn btn-primary" style="margin-top:12px;display:none;">Save Threat Model</button>
     <div class="model-header">
       <div>
         <div class="model-title-row">
@@ -824,11 +824,25 @@
 
       status.textContent = 'Done.';
       result.innerHTML = renderThreatModel(data);
+            document.getElementById('saveBtn').style.display = 'inline-block';
+      window.lastThreatModel = { description, data };
     } catch (err) {
       status.textContent = 'Error: could not reach the server.';
       console.error(err);
     }
   });
+  
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      const saved = JSON.parse(localStorage.getItem('threatModels') || '[]');
+      saved.push({
+        id: Date.now(),
+        description: window.lastThreatModel.description,
+        data: window.lastThreatModel.data,
+        savedAt: new Date().toISOString()
+      });
+      localStorage.setItem('threatModels', JSON.stringify(saved));
+      document.getElementById('generateStatus').textContent = 'Saved!';
+    });
 </script>
 </body>
 </html>
