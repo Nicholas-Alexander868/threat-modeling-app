@@ -397,7 +397,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
     </button>
     <div class="rail-divider"></div>
-    <div class="rail-item" title="Dashboard">
+<div id="dashboardBtn" class="rail-item" title="Dashboard">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
     </div>
     <div class="rail-item active" title="Threat models">
@@ -413,7 +413,7 @@
 
   <!-- MAIN WORKSPACE -->
   <div class="main">
-      <div class="generate-box" style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:20px;">
+      <div id="dashboardPanel" style="display:none;"><h2 style="margin-bottom:16px;">Saved Threat Models</h2><div id="dashboardList"></div></div><div class="generate-box" style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:20px;">
       <div class="section-title"><span class="n">▶</span> Generate a threat model</div>
       <textarea id="systemDescription" placeholder="Describe your system, e.g. Customer support chatbot using Azure OpenAI, Microsoft Graph API, Redis cache, PostgreSQL database and React frontend." style="width:100%;min-height:80px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);padding:10px;font-family:var(--font-body);font-size:13px;"></textarea>
       <button id="generateBtn" class="btn btn-primary" style="margin-top:10px;">Generate Threat Model</button>
@@ -842,6 +842,26 @@
       });
       localStorage.setItem('threatModels', JSON.stringify(saved));
       document.getElementById('generateStatus').textContent = 'Saved!';
+    });
+    
+    document.getElementById('dashboardBtn').addEventListener('click', () => {
+      document.getElementById('dashboardPanel').style.display = 'block';
+      document.querySelector('.generate-box').style.display = 'none';
+
+      const saved = JSON.parse(localStorage.getItem('threatModels') || '[]');
+      const listEl = document.getElementById('dashboardList');
+
+      if (saved.length === 0) {
+        listEl.innerHTML = '<p style="color:var(--text-secondary);">No saved threat models yet.</p>';
+        return;
+      }
+
+      listEl.innerHTML = saved.map(item => `
+        <div style="border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px;background:var(--bg-panel);">
+          <strong>${item.description}</strong>
+          <p style="color:var(--text-secondary);font-size:12.5px;margin-top:4px;">Saved: ${new Date(item.savedAt).toLocaleString()}</p>
+        </div>
+      `).join('');
     });
 </script>
 </body>
