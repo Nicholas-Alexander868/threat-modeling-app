@@ -393,7 +393,7 @@
 
   <!-- ICON RAIL -->
   <div class="rail">
-    <button class="rail-new" title="New threat model">
+    <button id="newBtn" class="rail-new" title="New threat model">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
     </button>
     <div class="rail-divider"></div>
@@ -863,6 +863,12 @@
         </div>
       `).join('');
     });
-</script>
+    
+    document.getElementById('newBtn').addEventListener('click', () => {
+      document.getElementById('dashboardPanel').style.display = 'none';
+      document.querySelector('.generate-box').style.display = 'block';
+    });
+    
+    </script>
 </body>
 </html>
