@@ -35,6 +35,18 @@
     --font-body: 'Inter', sans-serif;
     --font-mono: 'IBM Plex Mono', monospace;
   }
+  :root[data-theme="light"]{
+  --bg:#F4F6FA;
+  --bg-elevated:#FFFFFF;
+  --bg-panel:#FFFFFF;
+  --border:#D5DBE6;
+  --border-soft:#E6EAF1;
+  --text-primary:#111A2C;
+  --text-secondary:#4A5670;
+  --text-tertiary:#7A869E;
+  --accent:#0E8FB0;
+  --accent-dim:rgba(14,143,176,0.12);
+}
   *{margin:0;padding:0;box-sizing:border-box;}
   body{
     background:var(--bg);
@@ -389,6 +401,7 @@
     </div>
     <div class="topbar-spacer"></div>
     <span class="env-tag">DRAFT · UNREVIEWED</span>
+    <button id="themeBtn" class="btn" title="Switch light/dark mode">Light mode</button>
     <div class="avatar">JD</div>
   </div>
 
@@ -695,6 +708,23 @@
 </div>
 
 <script>
+  // Light/dark mode toggle
+const themeBtn = document.getElementById('themeBtn');
+function applyTheme(theme){
+  if(theme === 'light'){
+    document.documentElement.setAttribute('data-theme','light');
+    themeBtn.textContent = 'Dark mode';
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    themeBtn.textContent = 'Light mode';
+  }
+}
+try { applyTheme(localStorage.getItem('theme') || 'dark'); } catch(e) {}
+themeBtn.addEventListener('click', ()=>{
+  const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  applyTheme(next);
+  try { localStorage.setItem('theme', next); } catch(e) {}
+});
   // Tab switching
   document.querySelectorAll('.tab').forEach(tab=>{
     tab.addEventListener('click', ()=>{
